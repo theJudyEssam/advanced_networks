@@ -36,7 +36,7 @@ const client = mqtt.connect(connectUrl, {
 
 // Express app setup
 const app = express();
-app.use(cors());
+app.use(cors()); // feh separate backend w frontend
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
@@ -91,9 +91,9 @@ const sensorHistory = {
   air_quality: [],
   accelerometer: []
 };
+const MAX_HISTORY_LENGTH = 100;
 
 
-const MAX_HISTORY_LENGTH = 100; // Keep last 100 readings
 
 // MQTT Connection Handler
 client.on('connect', () => {
@@ -114,13 +114,15 @@ client.on('connect', () => {
   });
 });
 
-// MQTT Disconnect Handler
+
+
 client.on('disconnect', () => {
   console.log('Disconnected from MQTT broker');
   deviceState.connection_status = 'disconnected';
 });
 
-// MQTT Message Handler
+
+
 client.on('message', (topic, message) => {
   const msg = message.toString();
   console.log(`📨 Received on ${topic}: ${msg}`);
@@ -162,6 +164,8 @@ client.on('message', (topic, message) => {
   }
 });
 
+
+
 // Message Handlers
 function handleStatusMessage(data, timestamp) {
   console.log('📊 Status update received');
@@ -175,6 +179,9 @@ function handleStatusMessage(data, timestamp) {
   if (data.uptime !== undefined) deviceState.system.uptime = data.uptime;
   if (data.free_heap !== undefined) deviceState.system.free_heap = data.free_heap;
 }
+
+
+
 
 function handleHeartRateMessage(data, timestamp) {
   console.log(`💓 Heart Rate: ${data.bpm} BPM, SpO2: ${data.spo2}%`);
@@ -197,6 +204,8 @@ function handleHeartRateMessage(data, timestamp) {
   }
 }
 
+
+
 function handleTemperatureMessage(data, timestamp) {
   console.log(`🌡️ Temperature: ${data.temperature}°${data.unit || 'C'}`);
   
@@ -207,13 +216,13 @@ function handleTemperatureMessage(data, timestamp) {
     sensor_id: data.sensor_id || null
   };
   
-  // Add to history
   if (data.temperature !== null) {
     addToHistory('temperature', {
       value: data.temperature,
       timestamp: timestamp
     });
   }
+
 }
 
 function handleAirQualityMessage(data, timestamp) {
@@ -269,28 +278,27 @@ function addToHistory(sensorType, data) {
 
 // API Routes
 
-// LED Control (existing)
-app.post('/api/led', (req, res) => {
-  console.log("🔌 LED control request received");
-  const state = req.body.status;
+// // LED Control (existing)
+// app.post('/api/led', (req, res) => {
+//   console.log("🔌 LED control request received");
+//   const state = req.body.status;
   
-  if (state === 'on' || state === 'off') {
-    const command = state === 'on' ? '1' : '0';
-    client.publish(COMMAND_TOPIC, command);
+//   if (state === 'on' || state === 'off') {
+//     const command = state === 'on' ? '1' : '0';
+//     client.publish(COMMAND_TOPIC, command);
     
-    deviceState.led = state;
-    res.json({ success: true, message: `LED turned ${state}` });
-  } else {
-    res.status(400).json({ success: false, message: 'Invalid state. Use "on" or "off"' });
-  }
-});
+//     deviceState.led = state;
+//     res.json({ success: true, message: `LED turned ${state}` });
+//   } else {
+//     res.status(400).json({ success: false, message: 'Invalid state. Use "on" or "off"' });
+//   }
+// });
 
-// Get current heart rate data
+//! Get current heart rate data
 app.get('/api/heart_rate', (req, res) => {
   res.json({
     success: true,
     data: deviceState.sensors.heart,
-    history: sensorHistory.heart.slice(-20) // Last 20 readings
   });
 });
 
@@ -299,7 +307,6 @@ app.get('/api/temperature', (req, res) => {
   res.json({
     success: true,
     data: deviceState.sensors.temperature,
-    history: sensorHistory.temperature.slice(-20)
   });
 });
 
@@ -308,7 +315,6 @@ app.get('/api/air_quality', (req, res) => {
   res.json({
     success: true,
     data: deviceState.sensors.air_quality,
-    history: sensorHistory.air_quality.slice(-20)
   });
 });
 
@@ -317,12 +323,13 @@ app.get('/api/accelerometer', (req, res) => {
   res.json({
     success: true,
     data: deviceState.sensors.accelerometer,
-    history: sensorHistory.accelerometer.slice(-20)
   });
 });
 
 // Get all sensor data
 app.get('/api/sensors', (req, res) => {
+
+  console.log("thiss " + deviceState.sensors.air_quality.finger_detected)
   res.json({
     success: true,
     sensors: deviceState.sensors,
