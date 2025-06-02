@@ -1,44 +1,42 @@
+const TEMP_ALERT = 30;
+const HUMIDITY_ALERT = 70;
+const AIR_ALERT = 1000;
+const MOTION_THRESHOLD = 15;
+const HEART_RATE_LOW = 50;
+const HEART_RATE_HIGH = 120;
 
-const TEMP_ALERT = 30;       // °C
-const HUMIDITY_ALERT = 70;   // %
-const AIR_ALERT = 1000;      // ppm
-const MOTION_THRESHOLD = 15; // m/s² (for sudden movement)
+// async function fetchEnvironmentData() {
+//     try {
+//         const res = await fetch('http://localhost:3000/api/temperature');
+//         const result = await res.json();
+//         const temp = result.data.temperature;
+//         const humidity = result.data.humidity;
 
-//! ADD THE HEART MONITOR READINGS
-//! ADD THE THRESHOLDS AND THE WARNINGS
-//! ADD THE READINGS TO THE FRONTEND
-//! CALL IT A DAY
+//         document.getElementById('temperature').textContent = `${temp} °C`;
+//         document.getElementById('humidity').textContent = `${humidity} %`;
 
-async function fetchEnvironmentData() {
-    try {
-        const response = await fetch('http://localhost:3000/api/temperature');
-        const data = await response.json();
-        console.log(data.data)
+//         const tempAlert = document.getElementById('temp-alert');
+//         tempAlert.textContent = temp > TEMP_ALERT ? "WARNING: High Temperature!" : "Normal";
+//         tempAlert.classList.toggle('alert', temp > TEMP_ALERT);
 
-    } catch (err) {
-        console.error("Failed to fetch environment data:", err);
-    }
-}
+//         const humidityAlert = document.getElementById('humidity-alert');
+//         humidityAlert.textContent = humidity > HUMIDITY_ALERT ? "WARNING: High Humidity!" : "Normal";
+//         humidityAlert.classList.toggle('alert', humidity > HUMIDITY_ALERT);
+//     } catch (err) {
+//         console.error("Failed to fetch environment data:", err);
+//     }
+// }
 
 async function fetchAirQualityData() {
     try {
-        const response = await fetch('http://localhost:3000/api/air_quality');
-        const data = await response.json();
-        console.log(data.data)
+        const res = await fetch('http://localhost:3000/api/air_quality');
+        const result = await res.json();
+        const airQuality = result.data.value;
 
-        const airElement = document.getElementById('air-quality');
-        const airAlertElement = document.getElementById('air-alert');
-
-        // airElement.textContent = `${data.air_quality.toFixed(0)} ppm`;
-
-        if (data.air_quality > AIR_ALERT) {
-            airAlertElement.textContent = "DANGER: Poor air quality!";
-            airAlertElement.classList.add('alert');
-            sendAlert("Air quality alert!");
-        } else {
-            airAlertElement.textContent = "Normal";
-            airAlertElement.classList.remove('alert');
-        }
+        document.getElementById('air-quality').textContent = `${airQuality} ppm`;
+        const airAlert = document.getElementById('air-alert');
+        airAlert.textContent = airQuality > AIR_ALERT ? "DANGER: Poor air quality!" : "Normal";
+        airAlert.classList.toggle('alert', airQuality > AIR_ALERT);
     } catch (err) {
         console.error("Failed to fetch air quality data:", err);
     }
@@ -46,54 +44,44 @@ async function fetchAirQualityData() {
 
 async function fetchAccelerationData() {
     try {
-        const response = await fetch('http://localhost:3000/api/accelerometer');
-        const data = await response.json();
+        const res = await fetch('http://localhost:3000/api/accelerometer');
+        const result = await res.json();
+        const { x, y, z } = result.data;
 
-        const x = data.accel_x;
-        const y = data.accel_y;
-        const z = data.accel_z;
+        document.getElementById('accel-x').textContent = `${x.toFixed(2)} m/s²`;
+        document.getElementById('accel-y').textContent = `${y.toFixed(2)} m/s²`;
+        document.getElementById('accel-z').textContent = `${z.toFixed(2)} m/s²`;
 
-        console.log(data.data)
-
-        // document.getElementById('accel-x').textContent = `${x.toFixed(2)} m/s²`;
-        // document.getElementById('accel-y').textContent = `${y.toFixed(2)} m/s²`;
-        // document.getElementById('accel-z').textContent = `${z.toFixed(2)} m/s²`;
-
-        // const totalAccel = Math.sqrt(x ** 2 + y ** 2 + z ** 2);
-        // const motionAlert = document.getElementById('motion-alert');
-
-        // if (totalAccel > MOTION_THRESHOLD) {
-        //     motionAlert.textContent = "WARNING: Sudden movement!";
-        //     motionAlert.classList.add('alert');
-        //     sendAlert("Motion detected!");
-        // } else {
-        //     motionAlert.textContent = "No motion";
-        //     motionAlert.classList.remove('alert');
-        // }
+        const total = Math.sqrt(x * x + y * y + z * z);
+        const motionAlert = document.getElementById('motion-alert');
+        motionAlert.textContent = total > MOTION_THRESHOLD ? "WARNING: Sudden movement!" : "No motion";
+        motionAlert.classList.toggle('alert', total > MOTION_THRESHOLD);
     } catch (err) {
         console.error("Failed to fetch acceleration data:", err);
     }
 }
 
+async function fetchHeartRateData() {
+    try {
+        const res = await fetch('http://localhost:3000/api/heart_rate');
+        const result = await res.json();
+        const heartRate = result.data.bpm;
 
-
-function sendAlert(message) {
-    console.log("ALERT:", message);
-    fetch('/api/alert', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ message })
-    });
+        document.getElementById('heart-rate').textContent = `${heartRate} bpm`;
+        const heartAlert = document.getElementById('heart-alert');
+        heartAlert.textContent = heartRate < HEART_RATE_LOW || heartRate > HEART_RATE_HIGH ? "ALERT: Abnormal Heart Rate!" : "Normal";
+        heartAlert.classList.toggle('alert', heartRate < HEART_RATE_LOW || heartRate > HEART_RATE_HIGH);
+    } catch (err) {
+        console.error("Failed to fetch heart rate data:", err);
+    }
 }
 
-
-
-// Poll every 2 seconds
 function pollAllSensors() {
-    fetchEnvironmentData();
+    // fetchEnvironmentData();
     fetchAirQualityData();
     fetchAccelerationData();
+    fetchHeartRateData();
 }
 
 setInterval(pollAllSensors, 2000);
-pollAllSensors(); // Initial load
+pollAllSensors();

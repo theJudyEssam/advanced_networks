@@ -10,22 +10,29 @@
 <body>
     <div class="container">
         <h1>Safety Inspection Dashboard</h1>
-        
-      
 
-        <!-- Sensor Data -->
-        <div class="control-card">
+        <!-- Environment Section -->
+        <!-- <div class="control-card">
             <h2>Environment</h2>
             <div class="sensor-row">
                 <span>Temperature:</span>
                 <span id="temperature">-- °C</span>
             </div>
             <div class="sensor-row">
+                <span>Temperature Status:</span>
+                <span id="temp-alert">Normal</span>
+            </div>
+            <div class="sensor-row">
                 <span>Humidity:</span>
                 <span id="humidity">-- %</span>
             </div>
-        </div>
+            <div class="sensor-row">
+                <span>Humidity Status:</span>
+                <span id="humidity-alert">Normal</span>
+            </div>
+        </div> -->
 
+        <!-- Air Quality Section -->
         <div class="control-card">
             <h2>Air Quality</h2>
             <div class="sensor-row">
@@ -38,6 +45,7 @@
             </div>
         </div>
 
+        <!-- Accelerometer Section -->
         <div class="control-card">
             <h2>Accelerometer</h2>
             <div class="sensor-row">
@@ -57,6 +65,20 @@
                 <span id="motion-alert">No motion</span>
             </div>
         </div>
+
+        <!-- Heart Rate Section -->
+        <div class="control-card">
+            <h2>Heart Rate</h2>
+            <div class="sensor-row">
+                <span>Heart Rate:</span>
+                <span id="heart-rate">-- bpm</span>
+            </div>
+            <div class="sensor-row">
+                <span>Status:</span>
+                <span id="heart-alert">Normal</span>
+            </div>
+        </div>
     </div>
 </body>
 </html>
+

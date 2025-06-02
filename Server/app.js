@@ -7,9 +7,9 @@ import cors from "cors";
 
 // MQTT Configuration for EMQX
 const protocol = 'mqtt';
-const host = 'broker.emqx.io';
+const host = '3.87.127.15'; //change this ba2a 
 const port = '1883';
-const clientId = `mqtt_${Math.random().toString(16).slice(3)}`;
+const clientId = `MQTT-SafetyInspectionDashboard`;
 const connectUrl = `${protocol}://${host}:${port}`;
 
 
@@ -19,7 +19,6 @@ const STATUS_TOPIC = 'esp32/status';
 const HEART_TOPIC = 'esp32/heart';
 const ACCEL_TOPIC = 'esp32/accel';
 const AIR_TOPIC = 'esp32/air';
-const TEMP_TOPIC = 'esp32/temp';
 
 
 
@@ -28,8 +27,8 @@ const client = mqtt.connect(connectUrl, {
   clientId,
   clean: true,
   connectTimeout: 4000,
-  username: 'emqx',
-  password: 'public',
+  username: 'esp32',
+  password: 'yourpassword',
   reconnectPeriod: 1000,
 });
 
@@ -52,12 +51,6 @@ const deviceState = {
       bpm: null,
       spo2: null,
       finger_detected: false,
-      lastUpdate: null,
-      sensor_id: null
-    },
-    temperature: {
-      value: null,
-      unit: 'celsius',
       lastUpdate: null,
       sensor_id: null
     },
@@ -87,7 +80,6 @@ const deviceState = {
 // Store recent sensor readings for charts/history
 const sensorHistory = {
   heart: [],
-  temperature: [],
   air_quality: [],
   accelerometer: []
 };
@@ -101,7 +93,7 @@ client.on('connect', () => {
   deviceState.connection_status = 'connected';
   
   // Subscribe to all sensor topics
-  const topics = [STATUS_TOPIC, HEART_TOPIC, ACCEL_TOPIC, AIR_TOPIC, TEMP_TOPIC];
+  const topics = [STATUS_TOPIC, HEART_TOPIC, ACCEL_TOPIC, AIR_TOPIC];
   
   topics.forEach(topic => {
     client.subscribe(topic, (err) => {
@@ -138,10 +130,6 @@ client.on('message', (topic, message) => {
         
       case HEART_TOPIC:
         handleHeartRateMessage(data, timestamp);
-        break;
-        
-      case TEMP_TOPIC:
-        handleTemperatureMessage(data, timestamp);
         break;
         
       case AIR_TOPIC:
@@ -206,25 +194,6 @@ function handleHeartRateMessage(data, timestamp) {
 
 
 
-function handleTemperatureMessage(data, timestamp) {
-  console.log(`🌡️ Temperature: ${data.temperature}°${data.unit || 'C'}`);
-  
-  deviceState.sensors.temperature = {
-    value: data.temperature || null,
-    unit: data.unit || 'celsius',
-    lastUpdate: timestamp,
-    sensor_id: data.sensor_id || null
-  };
-  
-  if (data.temperature !== null) {
-    addToHistory('temperature', {
-      value: data.temperature,
-      timestamp: timestamp
-    });
-  }
-
-}
-
 function handleAirQualityMessage(data, timestamp) {
   console.log(`🌬️ Air Quality: ${data.air_quality}`);
   
@@ -242,7 +211,10 @@ function handleAirQualityMessage(data, timestamp) {
       timestamp: timestamp
     });
   }
+
 }
+
+
 
 function handleAccelerometerMessage(data, timestamp) {
   console.log(`📱 Accelerometer - X: ${data.x}, Y: ${data.y}, Z: ${data.z}`);
@@ -276,23 +248,6 @@ function addToHistory(sensorType, data) {
   }
 }
 
-// API Routes
-
-// // LED Control (existing)
-// app.post('/api/led', (req, res) => {
-//   console.log("🔌 LED control request received");
-//   const state = req.body.status;
-  
-//   if (state === 'on' || state === 'off') {
-//     const command = state === 'on' ? '1' : '0';
-//     client.publish(COMMAND_TOPIC, command);
-    
-//     deviceState.led = state;
-//     res.json({ success: true, message: `LED turned ${state}` });
-//   } else {
-//     res.status(400).json({ success: false, message: 'Invalid state. Use "on" or "off"' });
-//   }
-// });
 
 //! Get current heart rate data
 app.get('/api/heart_rate', (req, res) => {
@@ -302,13 +257,6 @@ app.get('/api/heart_rate', (req, res) => {
   });
 });
 
-// Get current temperature data
-app.get('/api/temperature', (req, res) => {
-  res.json({
-    success: true,
-    data: deviceState.sensors.temperature,
-  });
-});
 
 // Get current air quality data
 app.get('/api/air_quality', (req, res) => {
@@ -415,7 +363,6 @@ app.listen(PORT, () => {
   console.log('  GET  /api/state - Complete device state');
   console.log('  GET  /api/sensors - All sensor data');
   console.log('  GET  /api/heart_rate - Heart rate & SpO2');
-  console.log('  GET  /api/temperature - Temperature data');
   console.log('  GET  /api/air_quality - Air quality data');
   console.log('  GET  /api/accelerometer - Accelerometer data');
   console.log('  GET  /api/history/:sensorType - Sensor history');
